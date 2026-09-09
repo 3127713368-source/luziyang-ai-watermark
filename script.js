@@ -224,30 +224,44 @@ async function processImage() {
             createMask();
 
 
-        const formData =
-            new FormData();
+        const imageData =
+    await fileToDataURL(file);
+
+const response = await fetch(
+    "/.netlify/functions/remove-watermark",
+    {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            image: imageData,
+            mask: maskData
+        })
+    }
+);
 
 
-        formData.append(
-            "image",
-            file
-        );
+        const imageData =
+    await fileToDataURL(file);
 
+const response = await fetch(
+    "/.netlify/functions/remove-watermark",
+    {
+        method: "POST",
 
-        formData.append(
-            "mask",
-            maskData
-        );
+        headers: {
+            "Content-Type": "application/json"
+        },
 
-
-        const response =
-            await fetch(
-                "/.netlify/functions/remove-watermark",
-                {
-                    method: "POST",
-                    body: formData
-                }
-            );
+        body: JSON.stringify({
+            image: imageData,
+            mask: maskData
+        })
+    }
+);
 
 
         const result =
@@ -350,4 +364,20 @@ function downloadImage() {
 
     document.body.removeChild(a);
 
+}
+function fileToDataURL(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            resolve(reader.result);
+        };
+
+        reader.onerror = reject;
+
+        reader.readAsDataURL(file);
+
+    });
 }
