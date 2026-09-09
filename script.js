@@ -350,10 +350,12 @@ async function processImage() {
 
         if (!response.ok) {
 
-            throw new Error(
-                result.error ||
-                "AI处理失败"
-            );
+           throw new Error(
+    result.error ||
+    result.details?.error ||
+    JSON.stringify(result.details) ||
+    "AI处理失败"
+);
 
         }
 
