@@ -36,7 +36,14 @@ exports.handler = async function (event) {
             };
         }
 
-        // 调用 LaMa
+        /*
+         * 临时测试：
+         * 直接使用 Data URL。
+         *
+         * 如果图片超过 Replicate 的限制，
+         * 返回详细错误。
+         */
+
         const response = await fetch(
             "https://api.replicate.com/v1/predictions",
             {
@@ -63,12 +70,16 @@ exports.handler = async function (event) {
 
         const prediction = await response.json();
 
-        console.log("Replicate response:", prediction);
+        console.log(
+            "REPLICATE:",
+            JSON.stringify(prediction)
+        );
 
         if (!response.ok) {
 
             return {
                 statusCode: response.status,
+
                 body: JSON.stringify({
                     error: "Replicate 请求失败",
                     details: prediction
@@ -78,7 +89,6 @@ exports.handler = async function (event) {
 
         let result = prediction;
 
-        // 如果还在处理，就继续查询
         while (
             result.status !== "succeeded" &&
             result.status !== "failed" &&
@@ -106,9 +116,12 @@ exports.handler = async function (event) {
 
             return {
                 statusCode: 500,
+
                 body: JSON.stringify({
                     error: "AI 图片处理失败",
-                    details: result.error || result.status
+                    details:
+                        result.error ||
+                        result.status
                 })
             };
         }
@@ -124,10 +137,11 @@ exports.handler = async function (event) {
 
     } catch (error) {
 
-        console.error("Function error:", error);
+        console.error(error);
 
         return {
             statusCode: 500,
+
             body: JSON.stringify({
                 error: "服务器处理失败",
                 details: error.message
