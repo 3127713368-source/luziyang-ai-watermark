@@ -22,7 +22,7 @@ exports.handler = async function (event) {
 
     try {
 
-        const body = JSON.parse(event.body);
+        const body = JSON.parse(event.body || "{}");
 
         const image = body.image;
         const mask = body.mask;
@@ -36,6 +36,7 @@ exports.handler = async function (event) {
             };
         }
 
+        // 调用 LaMa
         const response = await fetch(
             "https://api.replicate.com/v1/predictions",
             {
@@ -43,13 +44,14 @@ exports.handler = async function (event) {
 
                 headers: {
                     "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Prefer": "wait"
                 },
 
                 body: JSON.stringify({
 
                     version:
-                        "2b91ca2340801c2a5be745612356fac36a17f698354a07f48a62d564d3b3a7a0",
+                        "twn39/lama:2b91ca2340801c2a5be745612356fac36a17f698354a07f48a62d564d3b3a7a0",
 
                     input: {
                         image: image,
@@ -60,6 +62,8 @@ exports.handler = async function (event) {
         );
 
         const prediction = await response.json();
+
+        console.log("Replicate response:", prediction);
 
         if (!response.ok) {
 
@@ -74,7 +78,7 @@ exports.handler = async function (event) {
 
         let result = prediction;
 
-        // 等待 AI 完成
+        // 如果还在处理，就继续查询
         while (
             result.status !== "succeeded" &&
             result.status !== "failed" &&
@@ -120,11 +124,10 @@ exports.handler = async function (event) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Function error:", error);
 
         return {
             statusCode: 500,
-
             body: JSON.stringify({
                 error: "服务器处理失败",
                 details: error.message
