@@ -23,18 +23,30 @@ let selectedHeight = 0;
 
 upload.addEventListener("change", function () {
 
-    const file = this.files[0];
+    const file = upload.files[0];
 
-    if (!file) return;
+    if (!file) {
+        return;
+    }
 
     resultImage = "";
+
+    selectedWidth = 0;
+    selectedHeight = 0;
 
     const url = URL.createObjectURL(file);
 
     image.onload = function () {
 
-        canvas.width = image.width;
-        canvas.height = image.height;
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
         ctx.drawImage(
             image,
@@ -43,6 +55,8 @@ upload.addEventListener("change", function () {
             canvas.width,
             canvas.height
         );
+
+        URL.revokeObjectURL(url);
     };
 
     image.src = url;
@@ -50,10 +64,14 @@ upload.addEventListener("change", function () {
 
 
 // =========================
-// 鼠标开始选择
+// 鼠标按下
 // =========================
 
 canvas.addEventListener("mousedown", function (event) {
+
+    if (!image.src) {
+        return;
+    }
 
     const rect = canvas.getBoundingClientRect();
 
@@ -68,6 +86,12 @@ canvas.addEventListener("mousedown", function (event) {
         / rect.height;
 
     isDragging = true;
+
+    selectedX = startX;
+    selectedY = startY;
+    selectedWidth = 0;
+    selectedHeight = 0;
+
 });
 
 
@@ -77,7 +101,9 @@ canvas.addEventListener("mousedown", function (event) {
 
 canvas.addEventListener("mousemove", function (event) {
 
-    if (!isDragging) return;
+    if (!isDragging) {
+        return;
+    }
 
     const rect = canvas.getBoundingClientRect();
 
@@ -92,8 +118,11 @@ canvas.addEventListener("mousemove", function (event) {
         / rect.height;
 
 
-    selectedX = Math.min(startX, currentX);
-    selectedY = Math.min(startY, currentY);
+    selectedX =
+        Math.min(startX, currentX);
+
+    selectedY =
+        Math.min(startY, currentY);
 
     selectedWidth =
         Math.abs(currentX - startX);
@@ -102,13 +131,14 @@ canvas.addEventListener("mousemove", function (event) {
         Math.abs(currentY - startY);
 
 
+    // 重新绘制原图
+
     ctx.clearRect(
         0,
         0,
         canvas.width,
         canvas.height
     );
-
 
     ctx.drawImage(
         image,
@@ -119,9 +149,10 @@ canvas.addEventListener("mousemove", function (event) {
     );
 
 
-    // 红色选择框
+    // 绘制红色选择框
+
     ctx.strokeStyle = "red";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 5;
 
     ctx.strokeRect(
         selectedX,
@@ -134,10 +165,21 @@ canvas.addEventListener("mousemove", function (event) {
 
 
 // =========================
-// 鼠标结束选择
+// 鼠标松开
 // =========================
 
 canvas.addEventListener("mouseup", function () {
+
+    isDragging = false;
+
+});
+
+
+// =========================
+// 鼠标离开 Canvas
+// =========================
+
+canvas.addEventListener("mouseleave", function () {
 
     isDragging = false;
 
@@ -153,14 +195,18 @@ function createMask() {
     const maskCanvas =
         document.createElement("canvas");
 
-    maskCanvas.width = canvas.width;
-    maskCanvas.height = canvas.height;
+    maskCanvas.width =
+        canvas.width;
+
+    maskCanvas.height =
+        canvas.height;
 
     const maskCtx =
         maskCanvas.getContext("2d");
 
 
-    // 黑色背景
+    // 黑色 = 不处理
+
     maskCtx.fillStyle = "black";
 
     maskCtx.fillRect(
@@ -171,7 +217,8 @@ function createMask() {
     );
 
 
-    // 白色 = 需要 AI 修复的区域
+    // 白色 = AI 修复区域
+
     maskCtx.fillStyle = "white";
 
     maskCtx.fillRect(
@@ -182,7 +229,41 @@ function createMask() {
     );
 
 
-    return maskCanvas.toDataURL("image/png");
+    return maskCanvas.toDataURL(
+        "image/png"
+    );
+
+}
+
+
+// =========================
+// 图片转 Base64
+// =========================
+
+function fileToDataURL(file) {
+
+    return new Promise(function (resolve, reject) {
+
+        const reader =
+            new FileReader();
+
+        reader.onload = function () {
+
+            resolve(reader.result);
+
+        };
+
+        reader.onerror = function () {
+
+            reject(
+                new Error("图片读取失败")
+            );
+
+        };
+
+        reader.readAsDataURL(file);
+
+    });
 
 }
 
@@ -193,7 +274,8 @@ function createMask() {
 
 async function processImage() {
 
-    const file = upload.files[0];
+    const file =
+        upload.files[0];
 
 
     if (!file) {
@@ -201,6 +283,7 @@ async function processImage() {
         alert("请先上传图片");
 
         return;
+
     }
 
 
@@ -209,59 +292,56 @@ async function processImage() {
         selectedHeight <= 0
     ) {
 
-        alert("请先用鼠标框选水印区域");
+        alert(
+            "请先用鼠标框选水印区域"
+        );
 
         return;
+
     }
 
 
     try {
 
-        alert("LZY AI 正在处理中，请稍候...");
+        alert(
+            "LZY AI 正在处理中，请稍候..."
+        );
 
+
+        // 原始图片
+
+        const imageData =
+            await fileToDataURL(file);
+
+
+        // Mask
 
         const maskData =
             createMask();
 
 
-        const imageData =
-    await fileToDataURL(file);
+        // 发送到 Netlify
 
-const response = await fetch(
-    "/.netlify/functions/remove-watermark",
-    {
-        method: "POST",
+        const response =
+            await fetch(
+                "/.netlify/functions/remove-watermark",
+                {
+                    method: "POST",
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-        body: JSON.stringify({
-            image: imageData,
-            mask: maskData
-        })
-    }
-);
+                    body: JSON.stringify({
 
+                        image: imageData,
 
-        const imageData =
-    await fileToDataURL(file);
+                        mask: maskData
 
-const response = await fetch(
-    "/.netlify/functions/remove-watermark",
-    {
-        method: "POST",
-
-        headers: {
-            "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-            image: imageData,
-            mask: maskData
-        })
-    }
-);
+                    })
+                }
+            );
 
 
         const result =
@@ -287,40 +367,57 @@ const response = await fetch(
         }
 
 
+        // 保存结果
+
         resultImage =
             result.image;
 
 
         // 显示 AI 结果
-        image.onload = function () {
 
-            canvas.width =
-                image.width;
+        image.onload =
+            function () {
 
-            canvas.height =
-                image.height;
+                canvas.width =
+                    image.naturalWidth;
 
-            ctx.drawImage(
-                image,
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
+                canvas.height =
+                    image.naturalHeight;
 
-        };
+                ctx.clearRect(
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+                ctx.drawImage(
+                    image,
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+            };
 
 
         image.src =
             resultImage;
 
 
-        alert("AI 去水印完成！");
+        alert(
+            "LZY AI 去水印完成！"
+        );
 
+    }
+    catch (error) {
 
-    } catch (error) {
+        console.error(
+            "LZY AI Error:",
+            error
+        );
 
-        console.error(error);
 
         alert(
             "AI处理失败：\n" +
@@ -333,16 +430,19 @@ const response = await fetch(
 
 
 // =========================
-// 下载
+// 下载图片
 // =========================
 
 function downloadImage() {
 
     if (!resultImage) {
 
-        alert("请先完成 AI 去水印");
+        alert(
+            "请先完成 AI 去水印"
+        );
 
         return;
+
     }
 
 
@@ -352,7 +452,6 @@ function downloadImage() {
 
     a.href =
         resultImage;
-
 
     a.download =
         "LZY-result.png";
@@ -364,20 +463,4 @@ function downloadImage() {
 
     document.body.removeChild(a);
 
-}
-function fileToDataURL(file) {
-
-    return new Promise((resolve, reject) => {
-
-        const reader = new FileReader();
-
-        reader.onload = () => {
-            resolve(reader.result);
-        };
-
-        reader.onerror = reject;
-
-        reader.readAsDataURL(file);
-
-    });
 }
