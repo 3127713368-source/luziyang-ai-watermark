@@ -1,169 +1,108 @@
-body{
-
-margin:0;
-
-font-family:
-"Microsoft YaHei",
-Arial;
-
-background:
-linear-gradient(
-135deg,
-#001f4d,
-#007bff
-);
-
-color:white;
-
-text-align:center;
-
+body {
+    margin: 0;
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+    background: linear-gradient(135deg, #001f4d, #007bff);
+    color: white;
+    text-align: center;
 }
 
-
-
-header{
-
-padding:80px 20px;
-
+header {
+    padding: 80px 20px;
 }
 
-
-
-.logo{
-
-font-size:80px;
-
-font-weight:bold;
-
-letter-spacing:8px;
-
+.logo {
+    font-size: 80px;
+    font-weight: bold;
+    letter-spacing: 8px;
 }
 
-
-
-h1{
-
-font-size:42px;
-
+h1 {
+    font-size: 42px;
 }
-
-
 
 .btn,
-button{
-
-display:inline-block;
-
-background:white;
-
-color:#0066ff;
-
-padding:15px 35px;
-
-border-radius:30px;
-
-border:none;
-
-font-size:18px;
-
-cursor:pointer;
-
-margin:10px;
-
+button {
+    display: inline-block;
+    background: white;
+    color: #0066ff;
+    padding: 15px 35px;
+    border-radius: 30px;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin: 10px;
 }
 
-
-
-.tool{
-
-background:white;
-
-color:#333;
-
-margin:30px auto;
-
-padding:40px;
-
-width:80%;
-
-max-width:600px;
-
-border-radius:25px;
-
+.tool {
+    background: white;
+    color: #333;
+    margin: 30px auto;
+    padding: 40px;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 25px;
 }
 
+/* =========================
+   Canvas 区域
+========================= */
 
-
-.preview img{
-
-max-width:90%;
-
-margin-top:20px;
-
-border-radius:15px;
-
+.canvas-box {
+    width: 100%;
+    margin: 25px auto;
+    text-align: center;
+    overflow: hidden;
 }
 
-
-
-.features{
-
-padding:50px 20px;
-
+#canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 20px auto;
+    border: 2px dashed #007bff;
+    cursor: crosshair;
+    background: #eeeeee;
+    user-select: none;
 }
 
+/* =========================
+   图片预览
+========================= */
 
-
-.box{
-
-display:flex;
-
-justify-content:center;
-
-gap:20px;
-
-flex-wrap:wrap;
-
+.preview img {
+    max-width: 90%;
+    margin-top: 20px;
+    border-radius: 15px;
 }
 
-
-
-.box div{
-
-background:white;
-
-color:#333;
-
-padding:20px;
-
-width:220px;
-
-border-radius:20px;
-
+.features {
+    padding: 50px 20px;
 }
 
-
-
-.vip{
-
-background:#003366;
-
-padding:50px;
-
+.box {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
-
-
-.vip h1{
-
-font-size:70px;
-
+.box div {
+    background: white;
+    color: #333;
+    padding: 20px;
+    width: 220px;
+    border-radius: 20px;
 }
 
+.vip {
+    background: #003366;
+    padding: 50px;
+}
 
+.vip h1 {
+    font-size: 70px;
+}
 
-footer{
-
-padding:20px;
-
+footer {
+    padding: 20px;
 }
