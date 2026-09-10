@@ -64,126 +64,230 @@ upload.addEventListener("change", function () {
 
 
 // =========================
-// 鼠标按下
+// 获取 Canvas 内部坐标
+// 支持电脑 + 手机
 // =========================
 
-canvas.addEventListener("mousedown", function (event) {
-
-    if (!image.src) {
-        return;
-    }
+function getCanvasPosition(event) {
 
     const rect = canvas.getBoundingClientRect();
 
-    startX =
+    let x =
         (event.clientX - rect.left)
         * canvas.width
         / rect.width;
 
-    startY =
+    let y =
         (event.clientY - rect.top)
         * canvas.height
         / rect.height;
 
-    isDragging = true;
+    // 防止超出图片范围
 
-    selectedX = startX;
-    selectedY = startY;
-    selectedWidth = 0;
-    selectedHeight = 0;
+    x = Math.max(
+        0,
+        Math.min(canvas.width, x)
+    );
 
-});
+    y = Math.max(
+        0,
+        Math.min(canvas.height, y)
+    );
+
+    return {
+        x: x,
+        y: y
+    };
+}
 
 
 // =========================
-// 鼠标移动
+// Pointer 按下
+// 支持：
+// 鼠标
+// 手机触摸
+// 手写笔
 // =========================
 
-canvas.addEventListener("mousemove", function (event) {
+canvas.addEventListener(
+    "pointerdown",
+    function (event) {
 
-    if (!isDragging) {
-        return;
+        if (!image.src) {
+            return;
+        }
+
+        event.preventDefault();
+
+        // 锁定当前 Pointer
+        canvas.setPointerCapture(
+            event.pointerId
+        );
+
+        const position =
+            getCanvasPosition(event);
+
+        startX = position.x;
+        startY = position.y;
+
+        isDragging = true;
+
+        selectedX = startX;
+        selectedY = startY;
+
+        selectedWidth = 0;
+        selectedHeight = 0;
+
     }
-
-    const rect = canvas.getBoundingClientRect();
-
-    const currentX =
-        (event.clientX - rect.left)
-        * canvas.width
-        / rect.width;
-
-    const currentY =
-        (event.clientY - rect.top)
-        * canvas.height
-        / rect.height;
-
-
-    selectedX =
-        Math.min(startX, currentX);
-
-    selectedY =
-        Math.min(startY, currentY);
-
-    selectedWidth =
-        Math.abs(currentX - startX);
-
-    selectedHeight =
-        Math.abs(currentY - startY);
-
-
-    // 重新绘制原图
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    ctx.drawImage(
-        image,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-
-    // 绘制红色选择框
-
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 5;
-
-    ctx.strokeRect(
-        selectedX,
-        selectedY,
-        selectedWidth,
-        selectedHeight
-    );
-
-});
+);
 
 
 // =========================
-// 鼠标松开
+// Pointer 移动
 // =========================
 
-canvas.addEventListener("mouseup", function () {
+canvas.addEventListener(
+    "pointermove",
+    function (event) {
 
-    isDragging = false;
+        if (!isDragging) {
+            return;
+        }
 
-});
+        event.preventDefault();
+
+        const position =
+            getCanvasPosition(event);
+
+        const currentX = position.x;
+        const currentY = position.y;
+
+
+        selectedX =
+            Math.min(
+                startX,
+                currentX
+            );
+
+        selectedY =
+            Math.min(
+                startY,
+                currentY
+            );
+
+        selectedWidth =
+            Math.abs(
+                currentX - startX
+            );
+
+        selectedHeight =
+            Math.abs(
+                currentY - startY
+            );
+
+
+        // =========================
+        // 重新绘制原图
+        // =========================
+
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        // =========================
+        // 红色选择框
+        // =========================
+
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 5;
+
+        ctx.strokeRect(
+            selectedX,
+            selectedY,
+            selectedWidth,
+            selectedHeight
+        );
+
+    }
+);
 
 
 // =========================
-// 鼠标离开 Canvas
+// Pointer 松开
 // =========================
 
-canvas.addEventListener("mouseleave", function () {
+canvas.addEventListener(
+    "pointerup",
+    function (event) {
 
-    isDragging = false;
+        if (!isDragging) {
+            return;
+        }
 
-});
+        event.preventDefault();
+
+        isDragging = false;
+
+        try {
+            canvas.releasePointerCapture(
+                event.pointerId
+            );
+        } catch (error) {
+            // 忽略 Pointer Capture 错误
+        }
+
+    }
+);
+
+
+// =========================
+// Pointer 被取消
+// =========================
+
+canvas.addEventListener(
+    "pointercancel",
+    function (event) {
+
+        isDragging = false;
+
+        try {
+            canvas.releasePointerCapture(
+                event.pointerId
+            );
+        } catch (error) {
+            // 忽略 Pointer Capture 错误
+        }
+
+    }
+);
+
+
+// =========================
+// 鼠标离开
+// =========================
+
+canvas.addEventListener(
+    "mouseleave",
+    function () {
+
+        // 注意：
+        // 这里不能再直接取消拖动
+        // 因为手机和鼠标拖动都使用 Pointer Capture
+
+    }
+);
 
 
 // =========================
@@ -242,28 +346,36 @@ function createMask() {
 
 function fileToDataURL(file) {
 
-    return new Promise(function (resolve, reject) {
+    return new Promise(
+        function (resolve, reject) {
 
-        const reader =
-            new FileReader();
+            const reader =
+                new FileReader();
 
-        reader.onload = function () {
+            reader.onload =
+                function () {
 
-            resolve(reader.result);
+                    resolve(
+                        reader.result
+                    );
 
-        };
+                };
 
-        reader.onerror = function () {
+            reader.onerror =
+                function () {
 
-            reject(
-                new Error("图片读取失败")
-            );
+                    reject(
+                        new Error(
+                            "图片读取失败"
+                        )
+                    );
 
-        };
+                };
 
-        reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
 
-    });
+        }
+    );
 
 }
 
@@ -280,7 +392,9 @@ async function processImage() {
 
     if (!file) {
 
-        alert("请先上传图片");
+        alert(
+            "请先上传图片"
+        );
 
         return;
 
@@ -293,7 +407,7 @@ async function processImage() {
     ) {
 
         alert(
-            "请先用鼠标框选水印区域"
+            "请先框选水印区域"
         );
 
         return;
@@ -320,7 +434,11 @@ async function processImage() {
             createMask();
 
 
-        // 发送到 Netlify
+        // =========================
+        // 暂时仍然使用现有后端
+        // 下一步我们会把这里替换成
+        // 浏览器本地 AI
+        // =========================
 
         const response =
             await fetch(
@@ -350,12 +468,14 @@ async function processImage() {
 
         if (!response.ok) {
 
-           throw new Error(
-    result.error ||
-    result.details?.error ||
-    JSON.stringify(result.details) ||
-    "AI处理失败"
-);
+            throw new Error(
+                result.error ||
+                result.details?.error ||
+                JSON.stringify(
+                    result.details
+                ) ||
+                "AI处理失败"
+            );
 
         }
 
