@@ -43,6 +43,7 @@ button {
     border-radius: 25px;
 }
 
+
 /* =========================
    Canvas 区域
 ========================= */
@@ -54,16 +55,41 @@ button {
     overflow: hidden;
 }
 
+
+/* =========================
+   图片 Canvas
+========================= */
+
 #canvas {
     display: block;
+
     max-width: 100%;
     height: auto;
+
     margin: 20px auto;
+
     border: 2px dashed #007bff;
-    cursor: crosshair;
+
     background: #eeeeee;
+
+    cursor: crosshair;
+
+    /* 手机触摸框选的关键 */
+    touch-action: none;
+
+    /* 防止手机长按选中文字 */
     user-select: none;
+
+    /* 防止部分浏览器拖动图片 */
+    -webkit-user-drag: none;
+
+    /* 防止触摸时出现浏览器默认行为 */
+    -webkit-touch-callout: none;
+
+    /* 提高触摸操作体验 */
+    -webkit-tap-highlight-color: transparent;
 }
+
 
 /* =========================
    图片预览
@@ -74,6 +100,11 @@ button {
     margin-top: 20px;
     border-radius: 15px;
 }
+
+
+/* =========================
+   功能介绍
+========================= */
 
 .features {
     padding: 50px 20px;
@@ -94,6 +125,11 @@ button {
     border-radius: 20px;
 }
 
+
+/* =========================
+   VIP
+========================= */
+
 .vip {
     background: #003366;
     padding: 50px;
@@ -103,6 +139,105 @@ button {
     font-size: 70px;
 }
 
+
+/* =========================
+   Footer
+========================= */
+
 footer {
     padding: 20px;
+}
+
+
+/* =========================
+   手机端适配
+========================= */
+
+@media (max-width: 768px) {
+
+    header {
+        padding: 50px 15px;
+    }
+
+    .logo {
+        font-size: 55px;
+        letter-spacing: 5px;
+    }
+
+    h1 {
+        font-size: 30px;
+    }
+
+    .tool {
+        width: 90%;
+        padding: 25px 15px;
+        box-sizing: border-box;
+    }
+
+    .btn,
+    button {
+        padding: 13px 25px;
+        font-size: 16px;
+    }
+
+    .canvas-box {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    #canvas {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+
+        margin: 15px auto;
+
+        border-width: 2px;
+    }
+
+    .features {
+        padding: 35px 15px;
+    }
+
+    .box div {
+        width: 90%;
+        max-width: 300px;
+    }
+
+    .vip {
+        padding: 35px 15px;
+    }
+
+    .vip h1 {
+        font-size: 45px;
+    }
+}
+
+
+/* =========================
+   小屏手机
+========================= */
+
+@media (max-width: 480px) {
+
+    .logo {
+        font-size: 45px;
+    }
+
+    h1 {
+        font-size: 26px;
+    }
+
+    .tool {
+        width: 94%;
+        padding: 20px 10px;
+    }
+
+    .btn,
+    button {
+        width: 90%;
+        box-sizing: border-box;
+        margin: 8px auto;
+    }
+
 }
