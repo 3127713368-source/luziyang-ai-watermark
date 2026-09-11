@@ -25,12 +25,12 @@ upload.addEventListener("change", function () {
 
     const file = upload.files[0];
 
-    if (!file) {
-        return;
-    }
+    if (!file) return;
 
     resultImage = "";
 
+    selectedX = 0;
+    selectedY = 0;
     selectedWidth = 0;
     selectedHeight = 0;
 
@@ -64,35 +64,25 @@ upload.addEventListener("change", function () {
 
 
 // =========================
-// 获取 Canvas 内部坐标
-// 支持电脑 + 手机
+// 获取鼠标 / 手指在图片上的坐标
 // =========================
 
-function getCanvasPosition(event) {
+function getPosition(clientX, clientY) {
 
     const rect = canvas.getBoundingClientRect();
 
     let x =
-        (event.clientX - rect.left)
+        (clientX - rect.left)
         * canvas.width
         / rect.width;
 
     let y =
-        (event.clientY - rect.top)
+        (clientY - rect.top)
         * canvas.height
         / rect.height;
 
-    // 防止超出图片范围
-
-    x = Math.max(
-        0,
-        Math.min(canvas.width, x)
-    );
-
-    y = Math.max(
-        0,
-        Math.min(canvas.height, y)
-    );
+    x = Math.max(0, Math.min(canvas.width, x));
+    y = Math.max(0, Math.min(canvas.height, y));
 
     return {
         x: x,
@@ -102,189 +92,211 @@ function getCanvasPosition(event) {
 
 
 // =========================
-// Pointer 按下
-// 支持：
-// 鼠标
-// 手机触摸
-// 手写笔
+// 开始选择
+// =========================
+
+function startSelection(clientX, clientY) {
+
+    if (!image.src) return;
+
+    const position =
+        getPosition(clientX, clientY);
+
+    startX = position.x;
+    startY = position.y;
+
+    selectedX = startX;
+    selectedY = startY;
+
+    selectedWidth = 0;
+    selectedHeight = 0;
+
+    isDragging = true;
+}
+
+
+// =========================
+// 移动选择框
+// =========================
+
+function moveSelection(clientX, clientY) {
+
+    if (!isDragging) return;
+
+    const position =
+        getPosition(clientX, clientY);
+
+    const currentX = position.x;
+    const currentY = position.y;
+
+    selectedX =
+        Math.min(startX, currentX);
+
+    selectedY =
+        Math.min(startY, currentY);
+
+    selectedWidth =
+        Math.abs(currentX - startX);
+
+    selectedHeight =
+        Math.abs(currentY - startY);
+
+
+    // 重画原图
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.drawImage(
+        image,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    // 红色选择框
+
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 5;
+
+    ctx.strokeRect(
+        selectedX,
+        selectedY,
+        selectedWidth,
+        selectedHeight
+    );
+}
+
+
+// =========================
+// 结束选择
+// =========================
+
+function stopSelection() {
+
+    isDragging = false;
+
+}
+
+
+// =========================
+// 电脑鼠标
 // =========================
 
 canvas.addEventListener(
-    "pointerdown",
+    "mousedown",
     function (event) {
-
-        if (!image.src) {
-            return;
-        }
 
         event.preventDefault();
 
-        // 锁定当前 Pointer
-        canvas.setPointerCapture(
-            event.pointerId
+        startSelection(
+            event.clientX,
+            event.clientY
         );
-
-        const position =
-            getCanvasPosition(event);
-
-        startX = position.x;
-        startY = position.y;
-
-        isDragging = true;
-
-        selectedX = startX;
-        selectedY = startY;
-
-        selectedWidth = 0;
-        selectedHeight = 0;
 
     }
 );
 
 
-// =========================
-// Pointer 移动
-// =========================
-
 canvas.addEventListener(
-    "pointermove",
+    "mousemove",
     function (event) {
 
-        if (!isDragging) {
-            return;
-        }
+        if (!isDragging) return;
 
         event.preventDefault();
 
-        const position =
-            getCanvasPosition(event);
-
-        const currentX = position.x;
-        const currentY = position.y;
-
-
-        selectedX =
-            Math.min(
-                startX,
-                currentX
-            );
-
-        selectedY =
-            Math.min(
-                startY,
-                currentY
-            );
-
-        selectedWidth =
-            Math.abs(
-                currentX - startX
-            );
-
-        selectedHeight =
-            Math.abs(
-                currentY - startY
-            );
-
-
-        // =========================
-        // 重新绘制原图
-        // =========================
-
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-        ctx.drawImage(
-            image,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-
-        // =========================
-        // 红色选择框
-        // =========================
-
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 5;
-
-        ctx.strokeRect(
-            selectedX,
-            selectedY,
-            selectedWidth,
-            selectedHeight
+        moveSelection(
+            event.clientX,
+            event.clientY
         );
 
     }
 );
 
 
-// =========================
-// Pointer 松开
-// =========================
-
 canvas.addEventListener(
-    "pointerup",
+    "mouseup",
     function (event) {
-
-        if (!isDragging) {
-            return;
-        }
 
         event.preventDefault();
 
-        isDragging = false;
-
-        try {
-            canvas.releasePointerCapture(
-                event.pointerId
-            );
-        } catch (error) {
-            // 忽略 Pointer Capture 错误
-        }
+        stopSelection();
 
     }
 );
 
 
 // =========================
-// Pointer 被取消
+// iPhone / Android 手指
 // =========================
 
 canvas.addEventListener(
-    "pointercancel",
+    "touchstart",
     function (event) {
 
-        isDragging = false;
+        event.preventDefault();
 
-        try {
-            canvas.releasePointerCapture(
-                event.pointerId
-            );
-        } catch (error) {
-            // 忽略 Pointer Capture 错误
-        }
+        if (!event.touches.length) return;
 
-    }
+        const touch =
+            event.touches[0];
+
+        startSelection(
+            touch.clientX,
+            touch.clientY
+        );
+
+    },
+    { passive: false }
 );
 
 
-// =========================
-// 鼠标离开
-// =========================
+canvas.addEventListener(
+    "touchmove",
+    function (event) {
+
+        event.preventDefault();
+
+        if (!event.touches.length) return;
+
+        const touch =
+            event.touches[0];
+
+        moveSelection(
+            touch.clientX,
+            touch.clientY
+        );
+
+    },
+    { passive: false }
+);
+
 
 canvas.addEventListener(
-    "mouseleave",
+    "touchend",
+    function (event) {
+
+        event.preventDefault();
+
+        stopSelection();
+
+    },
+    { passive: false }
+);
+
+
+canvas.addEventListener(
+    "touchcancel",
     function () {
 
-        // 注意：
-        // 这里不能再直接取消拖动
-        // 因为手机和鼠标拖动都使用 Pointer Capture
+        stopSelection();
 
     }
 );
@@ -336,7 +348,6 @@ function createMask() {
     return maskCanvas.toDataURL(
         "image/png"
     );
-
 }
 
 
@@ -376,7 +387,6 @@ function fileToDataURL(file) {
 
         }
     );
-
 }
 
 
@@ -397,7 +407,6 @@ async function processImage() {
         );
 
         return;
-
     }
 
 
@@ -411,7 +420,6 @@ async function processImage() {
         );
 
         return;
-
     }
 
 
@@ -422,23 +430,13 @@ async function processImage() {
         );
 
 
-        // 原始图片
-
         const imageData =
             await fileToDataURL(file);
 
 
-        // Mask
-
         const maskData =
             createMask();
 
-
-        // =========================
-        // 暂时仍然使用现有后端
-        // 下一步我们会把这里替换成
-        // 浏览器本地 AI
-        // =========================
 
         const response =
             await fetch(
@@ -489,13 +487,9 @@ async function processImage() {
         }
 
 
-        // 保存结果
-
         resultImage =
             result.image;
 
-
-        // 显示 AI 结果
 
         image.onload =
             function () {
@@ -540,19 +534,17 @@ async function processImage() {
             error
         );
 
-
         alert(
             "AI处理失败：\n" +
             error.message
         );
 
     }
-
 }
 
 
 // =========================
-// 下载图片
+// 下载
 // =========================
 
 function downloadImage() {
@@ -564,13 +556,11 @@ function downloadImage() {
         );
 
         return;
-
     }
 
 
     const a =
         document.createElement("a");
-
 
     a.href =
         resultImage;
@@ -578,11 +568,9 @@ function downloadImage() {
     a.download =
         "LZY-result.png";
 
-
     document.body.appendChild(a);
 
     a.click();
 
     document.body.removeChild(a);
-
 }
